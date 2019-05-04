@@ -38,20 +38,17 @@ impl PcStatus {
     }
 }
 
-pub fn get_pc_status(filename: String) -> std::io::Result<PcStatus> {
-    let metadata = fs::metadata(&filename)?;
+pub fn get_pc_status(filename: String) -> Result<PcStatus, String> {
+    let metadata = fs::metadata(&filename).map_err(|e| e.to_string())?;
     if metadata.is_dir() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "file is directory",
-        ));
+        return Err("file is directory".into());
     }
 
     let size = metadata.len();
-    let m_time = metadata.modified()?;
+    let m_time = metadata.modified().map_err(|e| e.to_string())?;
 
-    let f = File::open(&filename)?;
-    let ppstat = file_mincore(f.as_raw_fd(), size).unwrap();
+    let f = File::open(&filename).map_err(|e| e.to_string())?;
+    let ppstat = file_mincore(f.as_raw_fd(), size)?;
     let pages = ppstat.len();
     let mut cached = 0;
     let mut uncached = 0;

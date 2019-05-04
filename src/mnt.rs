@@ -4,13 +4,14 @@ use syscall;
 
 const CLONE_NEWNS: usize = 0x00020000;
 
-pub fn switch_mount_ns(pid: u32) {
+pub fn switch_mount_ns(pid: u32) -> Result<(), String> {
     let self_ns = get_mount_ns(process::id());
     let pid_ns = get_mount_ns(pid);
 
     if self_ns != pid_ns {
-        set_ns(pid_ns);
+        set_ns(pid_ns)?;
     }
+    Ok(())
 }
 
 fn get_mount_ns(pid: u32) -> i64 {
@@ -31,9 +32,11 @@ fn get_mount_ns(pid: u32) -> i64 {
         .unwrap_or(0)
 }
 
-fn set_ns(fd: i64) {
+fn set_ns(fd: i64) -> Result<(), String> {
     let ret = unsafe { syscall::syscall2(syscall::nr::SETNS, fd as usize, CLONE_NEWNS) };
 
-    // TODO
-    if ret != 0 {}
+    if ret != 0 {
+        return Err(format!("syscall SETNS failed, return {}", ret));
+    }
+    Ok(())
 }

@@ -41,7 +41,7 @@ fn main() -> io::Result<()> {
 
     if let Some(pid) = matches.value_of("pid") {
         let pid = pid.parse::<u32>().expect("invalid pid");
-        switch_mount_ns(pid);
+        switch_mount_ns(pid).unwrap();
 
         let file_path = format!("/proc/{}/maps", pid);
         let f = File::open(file_path)?;

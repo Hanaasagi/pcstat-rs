@@ -47,7 +47,7 @@ pub fn file_mincore(f: RawFd, size: u64) -> Result<Vec<bool>, String> {
     }
     // PROT_NONE = 0x0
     // MAP_SHARED = 0x1
-    let mmap_fd = mmap(f, 0, size as usize, 0x0, 0x1).unwrap();
+    let mmap_fd = mmap(f, 0, size as usize, 0x0, 0x1).map_err(|e| e.to_string())?;
     let vec_size = (size as usize + page_size() - 1) / page_size();
     let mut vec: Vec<u8> = vec![0; vec_size];
     let ret = unsafe {
@@ -59,7 +59,7 @@ pub fn file_mincore(f: RawFd, size: u64) -> Result<Vec<bool>, String> {
         )
     };
     if ret != 0 {
-        return Err(format!("MINCORE syscall return {}", ret));
+        return Err(format!("MINCORE syscall failed, return {}", ret));
     }
     Ok(vec.into_iter().map(|v| v & 1 != 0).collect::<Vec<bool>>())
 }
