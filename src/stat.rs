@@ -9,7 +9,6 @@ use std::time::SystemTime;
 pub struct PcStatus {
     name: String,
     size: u64,
-    timestamp: SystemTime,
     m_time: SystemTime,
     pages: u64,
     cached: u64,
@@ -21,7 +20,6 @@ impl PcStatus {
     fn new(
         name: String,
         size: u64,
-        timestamp: SystemTime,
         m_time: SystemTime,
         pages: u64,
         cached: u64,
@@ -31,7 +29,6 @@ impl PcStatus {
         Self {
             name,
             size,
-            timestamp,
             m_time,
             pages,
             cached,
@@ -51,7 +48,6 @@ pub fn get_pc_status(filename: String) -> std::io::Result<PcStatus> {
     }
 
     let size = metadata.len();
-    let timestamp = SystemTime::now();
     let m_time = metadata.modified()?;
 
     let f = File::open(&filename)?;
@@ -71,7 +67,6 @@ pub fn get_pc_status(filename: String) -> std::io::Result<PcStatus> {
     Ok(PcStatus::new(
         filename,
         size,
-        timestamp,
         m_time,
         pages as u64,
         cached,
