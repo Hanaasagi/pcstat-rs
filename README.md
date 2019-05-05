@@ -1,5 +1,5 @@
 # pcstat
-Linux Page Cache Stats
+Linux Page Cache Stats, Rust implementation of [tobert/pcstat](https://github.com/tobert/pcstat).
 
 ### Install
 
