@@ -13,31 +13,46 @@ fn mmap(
     length: usize,
     prot: libc::c_int,
     flags: libc::c_int,
-) -> io::Result<*mut libc::c_void> {
+) -> Result<*mut libc::c_void, String> {
     let alignment = offset % page_size() as u64;
     let aligned_offset = offset - alignment;
     let aligned_len = length + alignment as usize;
     if aligned_len == 0 {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "memory map must have a non-zero length",
-        ));
+        return Err("memory map must have a non-zero length".into());
     }
-    unsafe {
-        let ptr = libc::mmap(
+    let ptr = unsafe {
+        libc::mmap(
             ptr::null_mut(),
             aligned_len as libc::size_t,
             prot,
             flags,
             fd,
             aligned_offset as libc::off_t,
-        );
+        )
+    };
 
-        if ptr == libc::MAP_FAILED {
-            Err(io::Error::last_os_error())
-        } else {
-            Ok(ptr.offset(alignment as isize))
-        }
+    if ptr == libc::MAP_FAILED {
+        Err(format!("unable to mmap: {}", io::Error::last_os_error()))
+    } else {
+        Ok(unsafe { ptr.offset(alignment as isize) })
+    }
+}
+
+fn munmap(addr: *mut libc::c_void, length: usize) -> Result<(), String> {
+    let alignment = addr as usize % page_size();
+    let ret = unsafe {
+        libc::munmap(
+            addr.offset(-(alignment as isize)),
+            (length + alignment) as libc::size_t,
+        )
+    };
+    if ret != 0 {
+        return Err(format!(
+            "unable to unmap mmap: {}",
+            io::Error::last_os_error()
+        ));
+    } else {
+        Ok(())
     }
 }
 
@@ -58,6 +73,7 @@ pub fn file_mincore(f: RawFd, size: u64) -> Result<Vec<bool>, String> {
             vec.as_mut_ptr() as usize,
         )
     };
+    munmap(mmap_fd, size as usize)?;
     if ret != 0 {
         return Err(format!("MINCORE syscall failed, return {}", ret));
     }
